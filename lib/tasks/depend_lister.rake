@@ -16,7 +16,7 @@ class DependListerMain
     level_table_hash = to_level_table_hash_main(table_belongs_hash)
     # レベルを整理する
     organized_level_table_hash = organize_level(level_table_hash, table_belongs_hash)
-    debug_hash(organized_level_table_hash)
+    display_hash(organized_level_table_hash, table_belongs_hash)
   end
 
   private
@@ -129,5 +129,15 @@ class DependListerMain
 
   def debug_hash(hash)
     hash.each{|key, value| puts "#{key}:#{value}" }
+  end
+
+  def display_hash(level_table_hash, table_belongs_hash)
+    puts "Level\tTable\tBelongsTo"
+    level_table_hash.each do |level, tables|
+      tables.each do |table|
+        blongs = table_belongs_hash[table].join(', ')
+        puts "Lv#{level}\t#{table}\t#{blongs}"
+      end
+    end
   end
 end
