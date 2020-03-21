@@ -47,6 +47,16 @@ Lv3	stream_entries	accounts, statuses
 
 You can copy the result and paste to Excel Sheet or Google Spread Sheet.
 
+|  Level | Table | BelongsTo |
+| --- | --- | --- |
+|  Lv1 | accounts |  |
+|  Lv2 | follows | accounts |
+|  Lv2 | statuses | accounts |
+|  Lv2 | users | accounts |
+|  Lv3 | favourites | accounts, statuses |
+|  Lv3 | mentions | accounts, statuses |
+|  Lv3 | stream_entries | accounts, statuses |
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/kayamak/depend_lister. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/kayamak/depend_lister).
