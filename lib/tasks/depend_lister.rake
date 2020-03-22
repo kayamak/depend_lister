@@ -1,7 +1,7 @@
-require "depend_lister/core"
+require "depend_lister/depend_lister_core"
 
 desc "依存関係順のテーブル一覧"
 task depend_lister: :environment do
-  DependLister::Core.new.execute
+  DependListerCore.new.execute
 end
 

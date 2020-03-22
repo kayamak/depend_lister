@@ -1,4 +1,4 @@
-class DependLister::Core
+class DependListerCore
   def execute
     # テーブル名がキーで値がbelongs_to先テーブル名のハッシュを生成
     table_belongs_hash = to_table_belongs_hash
@@ -52,6 +52,33 @@ class DependLister::Core
     level_table_hash
   end
 
+  # ハッシュが空ではなかったら1.から繰り返す。
+  def to_level_table_hash!(table_belongs_hash, level)
+    level_table_hash = {}
+    # 1. ハッシュの値が空のテーブル名のテーブル名を空テーブル名を取得する。
+    top_tables = table_belongs_hash.select do |table, belongs|
+      belongs.empty?
+    end.keys
+    if top_tables.empty?
+      top_tables = table_belongs_hash.select do |table, belongs|
+        belongs.size == 1
+      end.keys
+    end
+    # 2. 空テーブル名をレベルiとする。
+    level_table_hash[level] = top_tables
+    # 3. ハッシュから空テーブル名をキーにして除去する。
+    top_tables.each do |table|
+      table_belongs_hash.delete(table)
+    end
+    # 4. ハッシュの値から空テーブル名を削除する。
+    tables = table_belongs_hash.keys
+    tables.each do |table|
+      belongs = table_belongs_hash[table]
+      table_belongs_hash[table] = belongs - top_tables
+    end
+    level_table_hash
+  end
+
   # テーブル名を取得
   def gain_tables
     ActiveRecord::Base.connection.tables.sort
@@ -83,7 +110,7 @@ class DependLister::Core
     table_model_hash.each do |table, model|
     next unless model # モデルが存在しないtableは無視する
       tables = belong_tables(model)
-      # 別名のmodelやparents(自身のモデルをbelongs_toのみしているものは)は除外
+      # 別名のmodelやparents(自身のモデルをbelongs_toのみしているものは)は除外    
       belogs[table] = tables & all_tables
     end
     belogs
@@ -94,33 +121,6 @@ class DependLister::Core
     model.reflect_on_all_associations(:belongs_to).map do |belong|
       belong.name.to_s.pluralize
     end.sort
-  end
-
-  # ハッシュが空ではなかったら1.から繰り返す。
-  def to_level_table_hash!(table_belongs_hash, level)
-    level_table_hash = {}
-    # 1. ハッシュの値が空のテーブル名のテーブル名を空テーブル名を取得する。
-    top_tables = table_belongs_hash.select do |table, belongs|
-      belongs.empty?
-    end.keys
-    if top_tables.empty?
-      top_tables = table_belongs_hash.select do |table, belongs|
-        belongs.size == 1
-      end.keys
-    end
-    # 2. 空テーブル名をレベルiとする。
-    level_table_hash[level] = top_tables
-    # 3. ハッシュから空テーブル名をキーにして除去する。
-    top_tables.each do |table|
-      table_belongs_hash.delete(table)
-    end
-    # 4. ハッシュの値から空テーブル名を削除する。
-    tables = table_belongs_hash.keys
-    tables.each do |table|
-      belongs = table_belongs_hash[table]
-      table_belongs_hash[table] = belongs - top_tables
-    end
-    level_table_hash
   end
 
   def debug_hash(hash)
