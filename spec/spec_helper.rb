@@ -1,5 +1,5 @@
 require "bundler/setup"
-require "depend_lister"
+# require "depend_lister"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
