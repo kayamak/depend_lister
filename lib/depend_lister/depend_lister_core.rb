@@ -5,11 +5,19 @@ class DependListerCore
     # レベルがキーで値がテーブル名のハッシュを生成
     level_table_hash = to_level_table_hash_main(table_belongs_hash)
     # レベルを整理する
-    organized_level_table_hash = organize_level(level_table_hash, table_belongs_hash)
-    displayed = display_hash(organized_level_table_hash, table_belongs_hash)
+    #organized_level_table_hash = organize_level(level_table_hash, table_belongs_hash)
+    displayed = display_hash(level_table_hash, table_belongs_hash)
   end
   
   private
+
+  def extract_belogs_to_self!(table_belongs_hash)
+    table_belongs_hash.each do |table, belongs|
+      if belongs.include?(table)
+        table_belongs_hash[table] = belongs - [table]
+      end
+    end
+  end
     
   def organize_level(level_table_hash, table_belongs_hash)
     organized_level_table_hash = {}
@@ -41,40 +49,73 @@ class DependListerCore
 
   def to_level_table_hash_main(arg_table_belongs_hash)
     table_belongs_hash = arg_table_belongs_hash.dup
-    level = 0;
+    extract_belogs_to_self!(table_belongs_hash)
     level_table_hash = {}
+    top_tables = to_top_tables!(table_belongs_hash)
+    level = 1
+    level_table_hash[level] = top_tables
     loop do
       level += 1
-      level_table_hash.merge!(to_level_table_hash!(table_belongs_hash, level))
-      break if table_belongs_hash.empty?
-      raise 'over loop' if level > 99
+      next_hash = to_level_table_hash!(table_belongs_hash, level, level_table_hash)
+      level_table_hash.merge!(next_hash)
+      break if level_table_hash[level].empty?
+      if level > 99
+        puts 'over loop'
+        break
+      end
     end
     level_table_hash
   end
 
-  # ハッシュが空ではなかったら1.から繰り返す。
-  def to_level_table_hash!(table_belongs_hash, level)
-    level_table_hash = {}
-    # 1. ハッシュの値が空のテーブル名のテーブル名を空テーブル名を取得する。
+  def to_top_tables!(table_belongs_hash)
+    # belongs_toが無いテーブル名を取得
     top_tables = table_belongs_hash.select do |table, belongs|
+      if belongs.empty?
+        table_belongs_hash.delete(table)
+      end
       belongs.empty?
     end.keys
-    if top_tables.empty?
-      top_tables = table_belongs_hash.select do |table, belongs|
-        belongs.size == 1
-      end.keys
+    top_tables.sort
+  end
+
+  # キーがレベル、値がテーブルのハッシュに変換する
+  def to_level_table_hash!(table_belongs_hash, level, level_table_hash)
+    # level-1のテーブル名を取得
+    prev_levels = []
+    (2..level).each do |level|
+      prev_levels << level_table_hash.fetch(level-1, [])
     end
-    # 2. 空テーブル名をレベルiとする。
-    level_table_hash[level] = top_tables
-    # 3. ハッシュから空テーブル名をキーにして除去する。
-    top_tables.each do |table|
+    prev_levels.flatten!
+
+    # level-1のテーブル名がbelongt_to先のテーブル名のレベルをlevelにする
+    table_belongs_hash.each do |table, belongs|
+      found = false
+      belongs.each do |belong|
+        if prev_levels.include?(belong)
+          found = true
+          break
+        end
+      end
+      if found
+        level_table_hash[level] ||= []
+        level_table_hash[level] << table
+      end
+    end
+    # table_belongs_hashのbelongsが
+    # 前レベルのテーブルに含まれていたテーブルを取得し、
+    # level_table_hash[level]から除外する
+    extract_tables = []
+    table_belongs_hash.each do |table, belongs|
+      unless belongs.to_set.subset?(prev_levels.to_set)
+        # prev_levelsにbelongsがすべて含まれていない場合
+        extract_tables << table
+      end
+    end
+    level_table_hash[level] ||= []
+    level_table_hash[level] -= extract_tables
+
+    level_table_hash[level].each do |table|
       table_belongs_hash.delete(table)
-    end
-    # 4. ハッシュの値から空テーブル名を削除する。
-    tables = table_belongs_hash.keys
-    tables.each do |table|
-      belongs = table_belongs_hash[table]
-      table_belongs_hash[table] = belongs - top_tables
     end
     level_table_hash
   end
