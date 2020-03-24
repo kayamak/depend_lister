@@ -22,7 +22,8 @@ RSpec.describe DependListerCore do
         "Lv2\tusers\taccounts",
         "Lv3\tfavourites\taccounts, statuses",
         "Lv3\tmentions\taccounts, statuses",
-        "Lv3\tstream_entries\taccounts, statuses"
+        "Lv3\tstream_entries\taccounts, statuses",
+        "Lv4\t\t"
       ].join("\n")
     }
     
@@ -146,23 +147,24 @@ RSpec.describe DependListerCore do
         "Lv7\ttint_codes\tviews",
         "Lv7\tview_words\tviews, fonts",
         "Lv8\tview_word_tints\tview_words",
-        # todo: 以下のロジックが未完成
-        # "Lv9\ttasks\tavail_account, purpose, output_form_type, preset_form\t",
-        # "Lv10\talterations\ttask, blueprint_set, output_form_type, tint_variation, bgm\t",
-        # "Lv10\tcomponent_tasks\tcomponent, task\t",
-        # "Lv10\tpreset_forms\ttask\t",
-        # "Lv11\talteration_views\tview, alteration, transform, view_partition, view_transition, view_blueprint\t",
-        # "Lv11\tbuild_histories\talteration\t",
-        # "Lv11\tpreset_form_preset_form_tags\tpreset_form, preset_form_tag\t",
-        # "Lv11\tshared_alteration_credentials\talteration\t",
-        # "Lv11\tstory_boards\talteration, component\t",
-        # "Lv12\talteration_view_aims\talteration_view, aim_association, view_aim\t",
-        # "Lv12\talteration_view_components\talteration_view, component\t",
-        # "Lv12\talteration_view_logo_aims\talteration_view\t",
-        # "Lv12\talteration_view_story_board_associations\talteration_view, story_board\t",
-        # "Lv12\talteration_view_words\talteration_view, view_word\t",
-        # "Lv12\tstory_board_words\tstory_board\t",
-        # "Lv13\talteration_view_aim_words\tfont, alteration_view_aim\t"
+        "Lv9\t\t",
+        "Lv10\tpreset_forms\ttasks",
+        "Lv10\ttasks\tavail_accounts, purposes, output_form_types, preset_forms",
+        "Lv11\talterations\ttasks, blueprint_sets, output_form_types, tint_variations, bgms",
+        "Lv11\tcomponent_tasks\tcomponents, tasks",
+        "Lv11\tpreset_form_preset_form_tags\tpreset_forms, preset_form_tags",
+        "Lv12\talteration_views\tviews, alterations, transforms, view_partitions, view_transitions, view_blueprints",
+        "Lv12\tbuild_histories\talterations",
+        "Lv12\tshared_alteration_credentials\talterations",
+        "Lv12\tstory_boards\talterations, components",
+        "Lv13\talteration_view_aims\talteration_views, aim_associations, view_aims",
+        "Lv13\talteration_view_components\talteration_views, components",
+        "Lv13\talteration_view_logo_aims\talteration_views",
+        "Lv13\talteration_view_story_board_associations\talteration_views, story_boards",
+        "Lv13\talteration_view_words\talteration_views, view_words",
+        "Lv13\tstory_board_words\tstory_boards",
+        "Lv14\talteration_view_aim_words\tfonts, alteration_view_aims",
+        "Lv15\t\t"
       ].join("\n")
     }
     

@@ -3,10 +3,21 @@ class DependListerCore
     # テーブル名がキーで値がbelongs_to先テーブル名のハッシュを生成
     table_belongs_hash = to_table_belongs_hash
     # レベルがキーで値がテーブル名のハッシュを生成
-    level_table_hash = to_level_table_hash_main(table_belongs_hash)
-    # レベルを整理する
-    #organized_level_table_hash = organize_level(level_table_hash, table_belongs_hash)
-    displayed = display_hash(level_table_hash, table_belongs_hash)
+    table_belongs_hash_bak = table_belongs_hash.dup
+    level_tables_hash = to_level_tables_hash_main!(table_belongs_hash)
+
+    unless table_belongs_hash.empty?
+      extract_no_belong!(table_belongs_hash)
+      table, blong = find_circulation(table_belongs_hash)
+      if table
+        table_belongs_hash[table] = []
+        table_belongs_hash[blong] = []
+        next_level = level_tables_hash.keys.max + 1
+        next_level_tables_hash = to_level_tables_hash_main!(next_level, table_belongs_hash)
+        level_tables_hash.merge!(next_level_tables_hash)
+      end
+    end
+    displayed = display_hash(level_tables_hash, table_belongs_hash_bak)
   end
   
   private
@@ -19,12 +30,12 @@ class DependListerCore
     end
   end
     
-  def organize_level(level_table_hash, table_belongs_hash)
-    organized_level_table_hash = {}
+  def organize_level(level_tables_hash, table_belongs_hash)
+    organized_level_tables_hash = {}
     pre_tables = []
-    level_table_hash.each do |level, tables|
+    level_tables_hash.each do |level, tables|
       if level == 1
-        organized_level_table_hash[level] = tables
+        organized_level_tables_hash[level] = tables
         pre_tables = tables
         next
       end
@@ -35,36 +46,58 @@ class DependListerCore
       end
       exist_belongs.compact!
       if exist_belongs.empty?
-        level_tables = organized_level_table_hash[level-1] || []
+        level_tables = organized_level_tables_hash[level-1] || []
         level_tables << tables
-        organized_level_table_hash[level-1] = level_tables.flatten
+        organized_level_tables_hash[level-1] = level_tables.flatten
         pre_tables << tables
       else
-        organized_level_table_hash[level] = tables
+        organized_level_tables_hash[level] = tables
         pre_tables = tables
       end
     end
-    organized_level_table_hash
+    organized_level_tables_hash
   end
 
-  def to_level_table_hash_main(arg_table_belongs_hash)
-    table_belongs_hash = arg_table_belongs_hash.dup
+  def to_level_tables_hash_main!(level=1, table_belongs_hash)
     extract_belogs_to_self!(table_belongs_hash)
-    level_table_hash = {}
+    level_tables_hash = {}
     top_tables = to_top_tables!(table_belongs_hash)
-    level = 1
-    level_table_hash[level] = top_tables
+    level_tables_hash[level] = top_tables
     loop do
       level += 1
-      next_hash = to_level_table_hash!(table_belongs_hash, level, level_table_hash)
-      level_table_hash.merge!(next_hash)
-      break if level_table_hash[level].empty?
+      next_hash = to_level_tables_hash!(table_belongs_hash, level, level_tables_hash)
+      level_tables_hash.merge!(next_hash)
+      break if level_tables_hash[level].empty?
       if level > 99
         puts 'over loop'
         break
       end
     end
-    level_table_hash
+    level_tables_hash
+  end
+
+  def extract_no_belong!(table_belongs_hash)
+    tables = table_belongs_hash.keys
+    table_belongs_hash.each do |table, belongs|
+      table_belongs_hash[table] = belongs.select { |belong| tables.include?(belong) }
+    end
+  end
+
+  def find_circulation(table_belongs_hash)
+    tables = table_belongs_hash.keys
+    table_belongs_hash.each do |table, belongs|
+      belongs.each do |belong|
+        # 参照先がないbelongは対象外
+        next unless tables.include?(belong)
+        # 参照先belog
+        next_belongs = table_belongs_hash[belong]
+        if next_belongs.include?(table)
+          # 参照先belogに元tableが含まれる場合
+          return [table, belong].sort
+        end
+      end
+    end
+    return [nil, nil]
   end
 
   def to_top_tables!(table_belongs_hash)
@@ -79,11 +112,11 @@ class DependListerCore
   end
 
   # キーがレベル、値がテーブルのハッシュに変換する
-  def to_level_table_hash!(table_belongs_hash, level, level_table_hash)
+  def to_level_tables_hash!(table_belongs_hash, level, level_tables_hash)
     # level-1のテーブル名を取得
     prev_levels = []
     (2..level).each do |level|
-      prev_levels << level_table_hash.fetch(level-1, [])
+      prev_levels << level_tables_hash.fetch(level-1, [])
     end
     prev_levels.flatten!
 
@@ -97,13 +130,13 @@ class DependListerCore
         end
       end
       if found
-        level_table_hash[level] ||= []
-        level_table_hash[level] << table
+        level_tables_hash[level] ||= []
+        level_tables_hash[level] << table
       end
     end
     # table_belongs_hashのbelongsが
     # 前レベルのテーブルに含まれていたテーブルを取得し、
-    # level_table_hash[level]から除外する
+    # level_tables_hash[level]から除外する
     extract_tables = []
     table_belongs_hash.each do |table, belongs|
       unless belongs.to_set.subset?(prev_levels.to_set)
@@ -111,13 +144,13 @@ class DependListerCore
         extract_tables << table
       end
     end
-    level_table_hash[level] ||= []
-    level_table_hash[level] -= extract_tables
+    level_tables_hash[level] ||= []
+    level_tables_hash[level] -= extract_tables
 
-    level_table_hash[level].each do |table|
+    level_tables_hash[level].each do |table|
       table_belongs_hash.delete(table)
     end
-    level_table_hash
+    level_tables_hash
   end
 
   # テーブル名を取得
@@ -168,14 +201,15 @@ class DependListerCore
     hash.each{|key, value| puts "#{key}:#{value}" }
   end
 
-  def display_hash(level_table_hash, table_belongs_hash)
+  def display_hash(level_tables_hash, table_belongs_hash)
     displayes = []
     displayes << "Level\tTable\tBelongsTo"
-    level_table_hash.each do |level, tables|
+    level_tables_hash.each do |level, tables|
       tables.each do |table|
         blongs = table_belongs_hash[table].join(', ')
-        displayes <<  "Lv#{level}\t#{table}\t#{blongs}"
+        displayes << "Lv#{level}\t#{table}\t#{blongs}"
       end
+      displayes << "Lv#{level}\t\t" if tables.empty?
     end
     result =  displayes.join("\n")
     puts result
