@@ -1,6 +1,6 @@
 class Belong
   # Generates the hash(key: table name, value: belongs_to point table name).
-  def to_table_belongs_hash
+  def make_table_belongs_hash
     # Generates the hash(key: table name, value: model).
     table_model_hash = to_table_model_hash
 
@@ -19,7 +19,7 @@ class Belong
   private
 
   # Generates the hash(key: table name, value: model name).
-  def make_table_model_hash
+  def to_table_model_hash
     tables = gain_tables
     models = to_models(tables)
     Hash[*tables.zip(models).flatten]
