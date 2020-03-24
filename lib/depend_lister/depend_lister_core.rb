@@ -82,12 +82,12 @@ class DependListerCore
     tables = @table_belongs_hash.keys
     @table_belongs_hash.each do |table, belongs|
       belongs.each do |belong|
-        # 参照先がないbelongは対象外
+        # the belong without a reference point is inapplicable.
         next unless tables.include?(belong)
-        # 参照先belog
+        # belog with a reference point.
         next_belongs = @table_belongs_hash[belong]
         if next_belongs.include?(table)
-          # 参照先belogに元tableが含まれる場合
+          # When former table is included in reference point belog
           return [table, belong].sort
         end
       end
@@ -96,7 +96,7 @@ class DependListerCore
   end
 
   def to_top_tables!
-    # belongs_toが無いテーブル名を取得
+    # Gains table names without belongs_to
     top_tables = @table_belongs_hash.select do |table, belongs|
       if belongs.empty?
         @table_belongs_hash.delete(table)
@@ -106,16 +106,18 @@ class DependListerCore
     top_tables.sort
   end
 
-  # キーがレベル、値がテーブルのハッシュに変換する
+  # Converts it into the hash(key: level, value: table name).
   def to_level_tables_hash!(level, level_tables_hash)
-    # level-1のテーブル名を取得
+    # Gains table names of level-1
     prev_levels = []
     (2..level).each do |level|
       prev_levels << level_tables_hash.fetch(level-1, [])
     end
     prev_levels.flatten!
 
-    # level-1のテーブル名がbelongt_to先のテーブル名のレベルをlevelにする
+    # A table name of level-1 selects 
+    # the level of the table name of 
+    # the belongt_to point as level
     @table_belongs_hash.each do |table, belongs|
       found = false
       belongs.each do |belong|
@@ -129,13 +131,14 @@ class DependListerCore
         level_tables_hash[level] << table
       end
     end
-    # @table_belongs_hashのbelongsが
-    # 前レベルのテーブルに含まれていたテーブルを取得し、
-    # level_tables_hash[level]から除外する
+    # Gains the table name that belongs of 
+    # @table_belongs_hash was included in 
+    # the table of the previous level and
+    # exclude it from level_tables_hash[level]
     extract_tables = []
     @table_belongs_hash.each do |table, belongs|
       unless belongs.to_set.subset?(prev_levels.to_set)
-        # prev_levelsにbelongsがすべて含まれていない場合
+        # When all belongs is not included in prev_levels
         extract_tables << table
       end
     end
