@@ -2,6 +2,8 @@ require "pry"
 require "depend_lister/depend_lister_core"
 
 RSpec.describe DependListerCore do
+  subject {DependListerCore.new.execute}
+
   context "there are not belongs_to related each other" do
     let(:table_blongs_hash)  {{
       "accounts"=>[],
@@ -26,12 +28,9 @@ RSpec.describe DependListerCore do
         "Lv4\t\t"
       ].join("\n")
     }
-    
     it "belongs_to is not related each other" do
-      core = DependListerCore.new
-      allow(core).to receive(:to_table_belongs_hash).and_return(table_blongs_hash)
-      result = core.execute
-      expect(result).to eq expected_result
+      allow_any_instance_of(Belong).to receive(:make_table_belongs_hash).and_return(table_blongs_hash)
+      expect(subject).to eq expected_result
     end
   end
   context "there are belongs_to related each other" do
@@ -96,7 +95,9 @@ RSpec.describe DependListerCore do
       "view_transitions"=>["avail_accounts"],
       "view_word_tints"=>["view_words"],
       "view_words"=>["views", "fonts"],
-      "views"=>["tint_variations", "transforms"]
+      "views"=>["tint_variations", "transforms"],
+      "another_preset_forms"=>["another_tasks"],
+      "another_tasks"=>["avail_accounts", "purposes", "output_form_types", "another_preset_forms"],
     }}
 
     let(:expected_result) {
@@ -164,15 +165,16 @@ RSpec.describe DependListerCore do
         "Lv13\talteration_view_words\talteration_views, view_words",
         "Lv13\tstory_board_words\tstory_boards",
         "Lv14\talteration_view_aim_words\tfonts, alteration_view_aims",
-        "Lv15\t\t"
+        "Lv15\t\t",
+        "Lv16\tanother_preset_forms\tanother_tasks",
+        "Lv16\tanother_tasks\tavail_accounts, purposes, output_form_types, another_preset_forms",
+        "Lv17\t\t"
       ].join("\n")
     }
     
     it "belongs_to is related each other" do
-      core = DependListerCore.new
-      allow(core).to receive(:to_table_belongs_hash).and_return(table_blongs_hash)
-      result = core.execute
-      expect(result).to eq expected_result
+      allow_any_instance_of(Belong).to receive(:make_table_belongs_hash).and_return(table_blongs_hash)
+      expect(subject).to eq expected_result
     end
   end
 end
