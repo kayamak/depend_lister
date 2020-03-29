@@ -1,4 +1,4 @@
-# DependLister
+# DependLister [![Gem Version](https://badge.fury.io/rb/depend_lister.svg)](https://badge.fury.io/rb/depend_lister)
 
 DependLister analyzes belongs_to defined by a model and outputs a list of tables in order with a little dependence.
 When You begin the maintenance of the existing project, it may be helpful.
